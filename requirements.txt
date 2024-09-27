@@ -8,6 +8,7 @@ faiss-cpu
 langchain_google_genai
 langchain-community
 langdetect
+googletrans==4.0.0-rc1 
 
 pip~=23.2.1
 attrs~=24.2.0
