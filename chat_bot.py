@@ -30,13 +30,18 @@ if "current_chat_id" not in st.session_state:
     st.session_state.current_chat_id = None
 if "chat_titles" not in st.session_state:
     st.session_state.chat_titles = {}
-if "show_tutorial" not in st.session_state:
-    st.session_state.show_tutorial = True
+if "chat_mode" not in st.session_state:
+    st.session_state.chat_mode = "pdf"
 if "language" not in st.session_state:
     st.session_state.language = "en"
+if "pdf_keywords" not in st.session_state:
+    st.session_state.pdf_keywords = []
 
 # Initialize translator
 translator = Translator()
+
+
+# ... (keep the existing helper functions: translate_text, get_pdf_text, get_text_chunks, get_vector_store, get_conversational_chain, user_input, create_new_chat, get_binary_file_downloader_html)
 
 
 def translate_text(text, target_language):
@@ -93,28 +98,47 @@ def get_conversational_chain():
     # Answer:
     # """
     prompt_template = """
-    You are Claude, an advanced AI assistant created by Anthropic, designed to provide detailed and informative responses on a broad array of topics, including history, ethics, mathematics, biology, environmental science, health, universal concepts, politics, geography, solar energy, habits, technology, coding, life, stories, psychology, philosophy, economics, artificial intelligence, cultural studies, and current events. You can also analyze and summarize information from provided PDF documents.
+        You are chatbot, an advanced AI assistant created by Lakshman Kodela, designed to deliver thorough, accurate, and structured responses across a broad array of topics, including history, ethics, mathematics, mythology, biology, environmental science, health, universal concepts, film industry, celebrity, politics, geography, solar energy, habits, technology, coding, life, stories, psychology, philosophy, economics, artificial intelligence, cultural studies, Social media, movies, and current events. You also possess the capability to analyze and summarize information from provided PDF documents. Your primary tasks include analyzing resumes, summarizing key arguments, and offering insights based on specific queries.
 
-    Answer the question as thoroughly as possible using the provided context, your general knowledge, or a combination of both. If the answer is not contained in the provided context, leverage your general knowledge to give a relevant and accurate response, while **guessing** based on logical reasoning and available data. If you lack sufficient information to answer accurately, acknowledge this and offer to provide insights on related topics if applicable.
+        When answering questions, aim to provide the most comprehensive and contextually relevant response, drawing upon the given context, your general knowledge, or a combination of both. If the context provided does not contain the necessary information, leverage your broader knowledge base to give a well-reasoned and accurate answer. If you are uncertain or lack sufficient information, acknowledge this while offering to provide insights on related topics if applicable.
 
-    When answering, consider the following:
+        ### Key Considerations:
+        1. **Accuracy and Context:** Ensure that the information provided is up-to-date and relevant to the specific query.
+        2. **Clear Summaries:** Use bullet points to summarize key arguments and findings from the resumes or documents.
+        3. **Significant Implications:** Highlight any significant implications or recommendations made in the texts.
+        4. **Different Perspectives:** Summarize varying perspectives or interpretations where applicable.
+        5. **Use of Keywords:** Frame your analysis using specific keywords from the provided resumes or documents.
+        6. **Confidence Level:** Indicate your confidence level in the analysis provided and suggest verification steps if necessary.
+        7. **Additional Clarification:** Ask follow-up questions if additional context or clarification is required.
+        8. **Broad Knowledge Integration:** Leverage your broad knowledge base to provide additional insights if the provided context is insufficient.
 
-    1. Provide accurate, up-to-date information.
-    2. Mention different perspectives or interpretations where relevant.
-    3. For questions about colors, symbols, or cultural references, provide context and explain any variations in meaning across cultures.
-    4. If asked about yourself, offer honest information regarding your capabilities and limitations as an AI.
-    5. Use clear formatting, such as bullet points or numbered lists, to enhance readability when appropriate.
-    6. Include historical and epic references where relevant to enrich the context of your answer.
-    7. Address ethical considerations in your responses, especially in areas related to health and the environment.
-    8. Incorporate suggestions for further exploration or study when applicable.
-    9. Use mathematical or scientific reasoning to support answers where necessary.
-    10. Consider biological and environmental impacts in relevant discussions.
+        ### Resume Evaluation Queries:
+        - Identify candidates with specific skills (e.g., "Who knows Python and SQL?").
+        - Compare candidates' work experience (e.g., "Who has more experience in data analysis?").
+        - Identify candidates with specific degrees or certifications (e.g., "Who has a Master's degree in Computer Science?").
+        - Rank candidates based on overall qualifications for a specific role (e.g., "Rank candidates based on their fit for a data analyst position.").
+        - Provide summaries for each candidate, highlighting strengths and potential fit for the role (e.g., "Summarize each candidate's qualifications.").
+        - Compare two or more candidates directly (e.g., "Compare Alice and Bob based on their experience with machine learning.").
+        - Suggest candidates for the next round based on specific criteria (e.g., "Which candidates should proceed to the interview stage?").
+        - Identify candidates with leadership experience (e.g., "Who has demonstrated leadership experience?").
 
-    Context:\n{context}\n
-    Question: \n{question}\n
+        ### Structured Response Requirements:
+        1. **Summarize Key Points:** Provide a concise summary of key qualifications and skills.
+        2. **Highlight Implications:** Note any significant findings or implications for the role.
+        3. **Varying Perspectives:** Discuss any differences in candidates' experiences or skills if relevant.
+        4. **Recommendation and Confidence:** Offer a recommendation based on the analysis and indicate your confidence level.
+        5. **Verification Steps:** Suggest further steps or checks to confirm your evaluation.
+        
+        Recognize and address any follow-up questions related to the previous question or response, providing appropriate answers to ensure a coherent and engaging dialogue.
 
-    Answer:
-    """
+        **Context:**
+        {context}
+
+        **Question:**
+        {question}
+
+        **Answer:**
+        """
 
     try:
         model = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0.3)
@@ -167,29 +191,29 @@ def get_binary_file_downloader_html(bin_file, file_label='File'):
     return href
 
 
-def show_tutorial():
-    st.sidebar.markdown("## Quick Tutorial")
-    st.sidebar.markdown("1. Optionally upload PDF files for specific content.")
-    st.sidebar.markdown("2. Ask questions about uploaded PDFs or any general topic.")
-    st.sidebar.markdown("3. Create new chats for different topics or documents.")
-    st.sidebar.markdown("4. Select your preferred language for interactions.")
-    st.sidebar.markdown("5. Export your chat history when needed.")
-    if st.sidebar.button("Got it! Don't show again"):
-        st.session_state.show_tutorial = False
-        st.rerun()
+
+def extract_keywords(text, num_keywords=10):
+    # This is a simple keyword extraction method. For better results, consider using
+    # more advanced NLP libraries like spaCy or NLTK.
+    words = text.lower().split()
+    word_freq = {}
+    for word in words:
+        if len(word) > 3:  # Ignore short words
+            word_freq[word] = word_freq.get(word, 0) + 1
+    return sorted(word_freq, key=word_freq.get, reverse=True)[:num_keywords]
 
 
 def main():
-    st.set_page_config(page_title="Advanced Multilingual PDF Chatbot", layout="wide")
-    st.title("PDF Chatbot ")
-
-    # Show tutorial for first-time users
-    if st.session_state.show_tutorial:
-        show_tutorial()
+    st.set_page_config(page_title="Advanced PDF Chatbot", layout="wide")
+    st.title("Advanced PDF Chatbot")
 
     # Sidebar
     with st.sidebar:
-        st.header("Chat Sessions")
+        st.header("Chat Options")
+
+        # Chat mode selection
+        st.session_state.chat_mode = st.radio("Select Chat Mode", ["PDF Chat", "General Chat"])
+
         if st.button("New Chat"):
             create_new_chat()
             st.rerun()
@@ -197,8 +221,7 @@ def main():
         st.subheader("Your Chats")
         for chat_id, chat_data in st.session_state.chats.items():
             chat_title = st.session_state.chat_titles[chat_id]
-            files = ", ".join([f.name for f in chat_data["files"]]) if chat_data["files"] else "No files"
-            if st.button(f"{chat_title} - {files}", key=chat_id):
+            if st.button(f"{chat_title}", key=chat_id):
                 st.session_state.current_chat_id = chat_id
                 st.rerun()
 
@@ -229,25 +252,30 @@ def main():
             current_chat["history"] = []
             st.rerun()
     with col3:
-        if st.button("Add More PDFs"):
-            current_chat["vector_store"] = None
-            st.rerun()
+        if st.button("Export Chat"):
+            export_chat_history(current_chat)
 
-    # PDF upload and processing
-    st.subheader("Upload PDFs (Optional)")
-    st.info("📘 You can upload PDF files to chat about their contents or ask general questions without uploading.")
-    pdf_docs = st.file_uploader("Upload your PDF Files", accept_multiple_files=True)
-    if st.button("Process PDFs"):
-        if pdf_docs:
-            current_chat["files"].extend(pdf_docs)
-            with st.spinner("Processing PDFs... This may take a moment."):
-                raw_text = get_pdf_text(current_chat["files"])
-                text_chunks = get_text_chunks(raw_text)
-                current_chat["vector_store"] = get_vector_store(text_chunks)
-            st.success("PDFs processed successfully! You can now start chatting.")
-            st.rerun()
-        else:
-            st.warning("No PDF files uploaded. You can still ask general questions.")
+    # PDF Chat Mode
+    if st.session_state.chat_mode == "PDF Chat":
+        st.subheader("PDF Chat Mode")
+        st.info("📘 Upload PDF files to chat about their contents.")
+
+        pdf_docs = st.file_uploader("Upload your PDF Files", accept_multiple_files=True)
+        if st.button("Process PDFs"):
+            if pdf_docs:
+                with st.spinner("Processing PDFs... This may take a moment."):
+                    raw_text = get_pdf_text(pdf_docs)
+                    text_chunks = get_text_chunks(raw_text)
+                    current_chat["vector_store"] = get_vector_store(text_chunks)
+                    st.session_state.pdf_keywords = extract_keywords(raw_text)
+                st.success("PDFs processed successfully! You can now start chatting.")
+                st.rerun()
+            else:
+                st.warning("No PDF files uploaded. Please upload PDFs to use this mode.")
+
+        if st.session_state.pdf_keywords:
+            st.subheader("Key Topics in PDF")
+            st.write(", ".join(st.session_state.pdf_keywords))
 
     # Display chat history
     st.subheader("Chat History")
@@ -257,56 +285,74 @@ def main():
 
     # Chat input
     st.subheader("Ask a Question")
-    st.info("Ask questions about uploaded PDFs or any general topic")
+    if st.session_state.chat_mode == "PDF Chat":
+        st.info("Ask questions about the uploaded PDFs or start with a greeting.")
+    else:
+        st.info("Ask any general question")
+
     prompt = st.chat_input("Type your question here...")
     if prompt:
-        # Detect input language
-        input_language = detect(prompt)
-
-        # Translate input to English if not in English
-        if input_language != 'en':
-            prompt_en = translate_text(prompt, 'en')
-        else:
-            prompt_en = prompt
-
-        # Add user message to chat history
-        current_chat["history"].append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.write(prompt)
-
-        # Process user input
-        with st.spinner("Generating response..."):
-            response_en = user_input(prompt_en, current_chat["vector_store"])
+        process_user_input(prompt, current_chat)
 
 
-            # Translate response back to user's language if needed
-            if st.session_state.language != 'en':
-                response = translate_text(response_en, st.session_state.language)
+def process_user_input(prompt, current_chat):
+    # Detect input language
+    input_language = detect(prompt)
+
+    # Translate input to English if not in English
+    if input_language != 'en':
+        prompt_en = translate_text(prompt, 'en')
+    else:
+        prompt_en = prompt
+
+    # Check if it's a greeting
+    greetings = ["hello", "hi", "hey", "greetings", "good morning", "good afternoon", "good evening"]
+    is_greeting = any(greeting in prompt_en.lower() for greeting in greetings)
+
+    # Add user message to chat history
+    current_chat["history"].append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.write(prompt)
+
+    # Process user input
+    with st.spinner("Generating response..."):
+        if st.session_state.chat_mode == "PDF Chat":
+            if is_greeting:
+                response_en = "Hello! I'm here to help you with information from the uploaded PDFs. What would you like to know?"
+            elif current_chat.get("vector_store"):
+                response_en = user_input(prompt_en, current_chat["vector_store"])
             else:
-                response = response_en
+                response_en = "I'm sorry, but no PDFs have been uploaded yet. Please upload some PDFs first, and then I'll be able to answer questions about them."
+        else:  # General Chat mode
+            if current_chat.get("vector_store"):
+                response_en = "It looks like you're in General Chat mode, but I have PDF information available. Would you like to switch to PDF Chat mode to get answers based on the uploaded documents? If not, feel free to ask any general question."
+            else:
+                response_en = user_input(prompt_en, None)
 
-        # Add AI response to chat history
-        current_chat["history"].append({"role": "assistant", "content": response})
-        with st.chat_message("assistant"):
-            st.write(response)
+        # Translate response back to user's language if needed
+        if st.session_state.language != 'en':
+            response = translate_text(response_en, st.session_state.language)
+        else:
+            response = response_en
 
-    # Export chat history
-    st.subheader("Export Chat History")
-    export_button = st.button("Download Chat History as Text File")
-    if export_button:
-        chat_history = "\n\n".join(
-            [f"{message['role'].capitalize()}: {message['content']}" for message in current_chat["history"]])
-        chat_file = f"chat_history_{st.session_state.current_chat_id}.txt"
-        with open(chat_file, 'w', encoding='utf-8') as file:
-            file.write(chat_history)
-        st.markdown(get_binary_file_downloader_html(chat_file, 'Chat History'), unsafe_allow_html=True)
+    # Add AI response to chat history
+    current_chat["history"].append({"role": "assistant", "content": response})
+    with st.chat_message("assistant"):
+        st.write(response)
 
-    # Footer
-    st.markdown("---")
-    st.markdown("Advanced Multilingual PDF Chatbot - Powered by Gemini and Streamlit")
+
+def export_chat_history(chat):
+    chat_history = "\n\n".join([f"{message['role'].capitalize()}: {message['content']}" for message in chat["history"]])
+    chat_file = f"chat_history_{st.session_state.current_chat_id}.txt"
+    with open(chat_file, 'w', encoding='utf-8') as file:
+        file.write(chat_history)
+    st.download_button(
+        label="Download Chat History",
+        data=chat_history,
+        file_name=chat_file,
+        mime="text/plain"
+    )
 
 
 if __name__ == "__main__":
     main()
-
-    # good d
