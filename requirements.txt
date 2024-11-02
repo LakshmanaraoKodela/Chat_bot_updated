@@ -1,7 +1,7 @@
 streamlit==1.26.0
 uuid
 PyPDF2==3.0.1
-langchain==0.0.123  # Or an appropriate version for your setup
+langchain==0.0.123
 langchain_google_genai==0.0.3
 python-dotenv==1.0.0
 google-auth==2.23.2
@@ -9,4 +9,5 @@ google-cloud-core==2.3.3
 googletrans==4.0.0-rc1
 langdetect==1.0.9
 google-generativeai==0.3.2
-pillow==9.5.0  # Specify a stable version of pillow
+pillow==9.5.0  # Specific stable version
+protobuf==4.21.12  # Compatibility with Google libraries
