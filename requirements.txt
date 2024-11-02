@@ -12,3 +12,4 @@ pytesseract~=0.3.13
 language_tool_python~=2.8.1
 pdf2image~=1.17.0
 langdetect
+googletrans==4.0.0-rc1
