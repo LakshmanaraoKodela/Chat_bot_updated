@@ -38,7 +38,7 @@ if "pdf_keywords" not in st.session_state:
     st.session_state.pdf_keywords = []
 
 # Initialize translator
-translator = Translator()
+translator = GoogleTranslator()
 
 
 # ... (keep the existing helper functions: translate_text, get_pdf_text, get_text_chunks, get_vector_store, get_conversational_chain, user_input, create_new_chat, get_binary_file_downloader_html)
