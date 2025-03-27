@@ -13,7 +13,7 @@ import os
 import google.generativeai as genai
 import base64
 from langdetect import detect
-from googletrans import Translator
+from deep_translator import GoogleTranslator
 
 # Load environment variables and configure API
 load_dotenv()
@@ -46,7 +46,7 @@ translator = Translator()
 
 def translate_text(text, target_language):
     try:
-        return translator.translate(text, dest=target_language).text
+        return GoogleTranslator(source='auto', target=target_language).translate(text)
     except Exception as e:
         st.error(f"Translation error: {str(e)}")
         return text
